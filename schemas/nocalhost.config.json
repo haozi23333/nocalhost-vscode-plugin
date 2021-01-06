@@ -1,0 +1,268 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "title": "Nocalhost config schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$",
+      "description": "应用名称",
+      "examples": "hello"
+    },
+    "manifestType": {
+      "type": "string",
+      "enum": [
+        "helmGit",
+        "helmRepo",
+        "rawManifest"
+      ],
+      "description": "应用 manifest 类型, \n 单选，可选项：helmGit/helmRepo/rawManifest",
+      "default": null
+    },
+    "resourcePath": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "helmGit类型此字段代表 Chart 相对于 Git 仓库根目录的位置。helmRepo 类型，此字段无意义。rawManifest 类型，此字段可以设置为 k8s manifest 文件夹相对于 Git 仓库的位置。",
+      "default": ["."]
+    },
+    "minimalInstall": {
+      "type": "boolean",
+      "description": "指明应用是否以最小副本数量安装 (暂未实现，未来支持)",
+      "default": false
+    },
+    "onPreInstall": {
+      "type": "array",
+      "description": "应用安装完毕后执行的任务，须指定 k8s Job 的 yaml文件 (暂未实现，未来支持)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Job 的 yaml 文件, 相对于 Git 仓库的根目录",
+            "default": "job-1.yaml"
+          },
+          "name": {
+            "type": "string",
+            "description": "Job 名称",
+            "default": "xxx-job"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "执行顺序，越小越先执行",
+            "default": -1
+          }
+        },
+        "required": [
+          "path",
+          "name"
+        ]
+      }
+    },
+    "onPostInstall": {
+      "type": "array",
+      "description": "应用安装完毕后执行的任务，须指定 k8s Job 的 yaml文件 (暂未实现，未来支持)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Job 的 yaml 文件, 相对于 Git 仓库的根目录",
+            "default": "job-1.yaml"
+          },
+          "name": {
+            "type": "string",
+            "description": "Job 名称",
+            "default": "xxx-job"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "执行顺序，越小越先执行",
+            "default": -1
+          }
+        },
+        "required": [
+          "path",
+          "name"
+        ]
+      }
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "微服务的名字",
+            "default": "test"
+          },
+          "serviceType": {
+            "type": "string",
+            "description": "微服务对应的 k8s 工作负载类型",
+            "enum": [
+              "deployment",
+              "statefulset",
+              "pod",
+              "job",
+              "cronjob",
+              "daemonset"
+            ],
+            "default": "deployment",
+          },
+          "gitUrl": {
+            "type": "string",
+            "description": "微服务的源码 Git 仓库地址",
+            "default": "https://github.com/nocalhost/nocalhost.git"
+          },
+          "devContainerImage": {
+            "type": "string",
+            "description": "微服务的 DevContainer 镜像",
+            "default": "xxxx/xxxxx"
+          },
+          "devContainerShell": {
+            "type": "string",
+            "description": "进入 DevMode 时，默认的 shell 环境 (暂未实现，未来支持)",
+            "default": "/bin/sh"
+          },
+          "syncType": {
+            "type": "string",
+            "description": "文件同步模式 (暂未实现，未来支持) \n \"send\" 单向同步本地文件到容器, \"sendreceive\" 双向同步",
+            "enum": [
+              "send",
+              "sendreceive"
+            ],
+            "default": "send"
+          },
+          "syncFilePattern": {
+            "type": "array",
+            "description": "在开发模式下要同步的目录列表",
+            "items": {
+              "type": "string"
+            },
+            "default": ["."]
+          },
+          "ignoreFilePattern": {
+            "type": "array",
+            "description": "在开发模式下要忽略同步的目录列表",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "devPorts": {
+            "type": "array",
+            "description": "进入开发模式后自动转发的端口列表",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d,?:\\d*$"
+            },
+            "default": []
+          },
+          "dependPodsLabelSelector": {
+            "type": "array",
+            "description": "指明依赖的 Pods 标签选择器 (当前服务会等待被标签选择器选中的 Pod 处于 Ready 状态才启动)",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "dependJobsLabelSelector": {
+            "type": "array",
+            "description": "指明依赖的 Jobs 标签选择器 (当前服务会等待被标签选择器选中的 Job 执行完毕才启动)",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "workDir": {
+            "type": "string",
+            "description": "指定 DevContainer 的工作目录，源码会被传输到此目录",
+            "default": "/home/nocalhost-dev"
+          },
+          "persistentVolumeDir": {
+            "type": "array",
+            "description": "DevContainer 中需要持久化存储的目录列表",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "开发容器中要持久化的目录路径",
+                  "require": true
+                },
+                "capacity": {
+                  "type": "string",
+                  "description": "目录的容量",
+                  "default": "10Gi"
+                }
+              },
+              "required": [
+                  "path"
+              ]
+            },
+            "default": []
+          },
+          "buildCommand": {
+            "type": "array",
+            "description": "在源码根目录下执行的构建编译命令",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          "runCommand": {
+            "type": "array",
+            "description": "在源码根目录下执行的启动服务命令",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          "debugCommand": {
+            "type": "array",
+            "description": "在源码根目录下执行的启动调试服务命令",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          "hotReloadRunCommand": {
+            "type": "array",
+            "description": "在源码根目录下执行的支持热加载的启动服务命令",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          "remoteDebugPort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65565,
+            "description": "该服务的远程调试端口"
+          },
+          "useDevContainer": {
+            "type": "boolean",
+            "description": "使用 Git 仓库中的 .dev-container 声明来指定 DevContainer 镜像 (暂未实现，未来支持)"
+          }
+        },
+        "required": [
+            "name",
+            "serviceType",
+            "gitUrl",
+            "devContainerImage"
+          ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "manifestType",
+    "resourcePath",
+    "services"
+  ]
+}
+
+  
